@@ -609,7 +609,7 @@ input[type=range].rng:focus-visible { outline: 2px solid var(--red); outline-off
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
       <h2 class="h2" style="font-size:30px">Application received</h2>
       <p class="sub">Thanks, <span id="done-name">we got it</span>. Someone from our team will reach out soon to set up your call.</p>
-      <p class="fine">Preview note: this form isn't connected to an inbox or CRM yet, so nothing was sent.</p>
+      
       <a class="btn btn-out" href="#top">Back to home</a>
     </div>
   </main>
@@ -885,6 +885,7 @@ input[type=range].rng:focus-visible { outline: 2px solid var(--red); outline-off
   window.addEventListener("hashchange", route); route();
 
   // apply form
+  var FORM_ENDPOINT = "https://formsubmit.co/ajax/yousifmansoorbusiness@gmail.com";
   var form = document.getElementById("apply-form"), err = document.getElementById("a-err");
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -896,9 +897,21 @@ input[type=range].rng:focus-visible { outline: 2px solid var(--red); outline-off
       return;
     }
     err.textContent = "";
-    document.getElementById("done-name").textContent = document.getElementById("a-name").value.trim().split(" ")[0] || "we got it";
-    form.hidden = true; document.getElementById("apply-done").hidden = false;
-    window.scrollTo(0, 0);
+    var btn = form.querySelector('button[type="submit"]'), fd = new FormData(form), data = {};
+    fd.forEach(function (v, k) { data[k] = v; });
+    data._subject = "New Reserved Financial application: " + (data.name || "");
+    data._template = "table"; data._captcha = "false"; data._replyto = data.email;
+    btn.disabled = true; err.textContent = "Sending...";
+    fetch(FORM_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(data) })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function () {
+        err.textContent = "";
+        document.getElementById("done-name").textContent = document.getElementById("a-name").value.trim().split(" ")[0] || "we got it";
+        form.hidden = true; document.getElementById("apply-done").hidden = false;
+        window.scrollTo(0, 0);
+      })
+      .catch(function () { err.textContent = "Something went wrong sending your application. Please try again in a minute."; })
+      .then(function () { btn.disabled = false; });
   });
 })();
 </script>
